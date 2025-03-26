@@ -173,6 +173,7 @@ class LeggedRobot(BaseTask):
             self.episode_sums[name] += rew
         if self.cfg.rewards.only_positive_rewards:
             self.rew_buf[:] = torch.clip(self.rew_buf[:], min=0.)
+            # print(self.rew_buf[:])
         # add termination reward after clipping
         if "termination" in self.reward_scales:
             rew = self._reward_termination() * self.reward_scales["termination"]
@@ -636,27 +637,33 @@ class LeggedRobot(BaseTask):
     #------------ reward functions----------------
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity
+        # print(torch.square(self.base_lin_vel[:, 2]))
         return torch.square(self.base_lin_vel[:, 2])
     
     def _reward_ang_vel_xy(self):
         # Penalize xy axes base angular velocity
+        # print(torch.sum(torch.square(self.base_ang_vel[:, :2]), dim=1))
         return torch.sum(torch.square(self.base_ang_vel[:, :2]), dim=1)
     
     def _reward_orientation(self):
         # Penalize non flat base orientation
+        # print(torch.sum(torch.square(self.projected_gravity[:, :2]), dim=1))
         return torch.sum(torch.square(self.projected_gravity[:, :2]), dim=1)
 
     def _reward_base_height(self):
         # Penalize base height away from target
         base_height = self.root_states[:, 2]
+        # print(torch.square(base_height - self.cfg.rewards.base_height_target))
         return torch.square(base_height - self.cfg.rewards.base_height_target)
-    
+        
     def _reward_torques(self):
         # Penalize torques
+        # print(torch.sum(torch.square(self.torques), dim=1))
         return torch.sum(torch.square(self.torques), dim=1)
 
     def _reward_dof_vel(self):
         # Penalize dof velocities
+        # print(torch.sum(torch.square(self.dof_vel), dim=1))
         return torch.sum(torch.square(self.dof_vel), dim=1)
     
     def _reward_dof_acc(self):
@@ -679,6 +686,7 @@ class LeggedRobot(BaseTask):
         # Penalize dof positions too close to the limit
         out_of_limits = -(self.dof_pos - self.dof_pos_limits[:, 0]).clip(max=0.) # lower limit
         out_of_limits += (self.dof_pos - self.dof_pos_limits[:, 1]).clip(min=0.)
+        # print(torch.sum(out_of_limits, dim=1))
         return torch.sum(out_of_limits, dim=1)
 
     def _reward_dof_vel_limits(self):

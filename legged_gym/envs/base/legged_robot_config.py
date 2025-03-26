@@ -41,11 +41,11 @@ class LeggedRobotCfg(BaseConfig):
         max_curriculum = 1.
         num_commands = 4 # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
         resampling_time = 10. # time before command are changed[s]
-        heading_command = True # if true: compute ang vel command from heading error
+        heading_command = False # if true: compute ang vel command from heading error
         class ranges:
-            lin_vel_x = [-1.0, 1.0] # min max [m/s]
-            lin_vel_y = [-1.0, 1.0]   # min max [m/s]
-            ang_vel_yaw = [-1, 1]    # min max [rad/s]
+            lin_vel_x = [0.1, 0.3] # min max [m/s]
+            lin_vel_y = [-0.0, 0.0]   # min max [m/s]
+            ang_vel_yaw = [-0.0, 0.0]    # min max [rad/s]
             heading = [-3.14, 3.14]
 
     class init_state:
@@ -90,38 +90,44 @@ class LeggedRobotCfg(BaseConfig):
         thickness = 0.01
 
     class domain_rand:
-        randomize_friction = True
+        randomize_friction = False
         friction_range = [0.5, 1.25]
         randomize_base_mass = False
         added_mass_range = [-1., 1.]
-        push_robots = True
+        push_robots = False
         push_interval_s = 15
         max_push_vel_xy = 1.
 
     class rewards:
         class scales:
-            termination = -0.0
-            tracking_lin_vel = 1.0
-            tracking_ang_vel = 0.5
-            lin_vel_z = -2.0
-            ang_vel_xy = -0.05
-            orientation = -0.
-            torques = -0.00001
-            dof_vel = -0.
-            dof_acc = -2.5e-7
-            base_height = -0. 
-            feet_air_time =  1.0
-            collision = -1.
-            feet_stumble = -0.0 
-            action_rate = -0.01
-            stand_still = -0.
-
+            termination = -0.0 #当任务终止时（例如机器人摔倒），给予的惩罚。
+            tracking_lin_vel = 1.0 #跟踪目标线速度的奖励。
+            tracking_ang_vel = 0.5 #跟踪目标角速度的奖励。
+            lin_vel_z = -2.0 #在 Z 轴方向上线速度的惩罚。
+            ang_vel_xy = -0.05 #在 X 和 Y 轴方向上角速度的惩罚。
+            orientation = -0. #机器人姿态的惩罚。
+            torques = -0.00001 #关节扭矩的惩罚。
+            dof_vel = -0. #关节速度的惩罚。
+            dof_acc = -2.5e-7 #关节加速度的惩罚
+            base_height = -0.  #机器人基座高度的惩罚。
+            feet_air_time =  1.0 #脚部离地时间的奖励。
+            collision = -1. #碰撞的惩罚。
+            feet_stumble = -0.0  #脚部绊倒的惩罚。
+            action_rate = -0.01 #动作变化率的惩罚。
+            stand_still = -0. #静止的惩罚
+        # 如果为 True，负奖励会被裁剪为 0，避免过早终止任务
         only_positive_rewards = True # if true negative total rewards are clipped at zero (avoids early termination problems)
+        # 跟踪奖励的高斯分布标准差。
         tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
+        # 关节位置软限制的百分比。
         soft_dof_pos_limit = 1. # percentage of urdf limits, values above this limit are penalized
+        # 关节速度软限制的百分比。
         soft_dof_vel_limit = 1.
+        # 关节扭矩软限制的百分比。
         soft_torque_limit = 1.
+        # 机器人基座的目标高度。
         base_height_target = 1.
+        # 最大接触力，超过此值会惩罚。
         max_contact_force = 100. # forces above this value are penalized
 
     class normalization:
@@ -202,7 +208,7 @@ class LeggedRobotCfgPPO(BaseConfig):
         policy_class_name = 'ActorCritic'
         algorithm_class_name = 'PPO'
         num_steps_per_env = 24 # per iteration
-        max_iterations = 1500 # number of policy updates
+        max_iterations = 3000 # number of policy updates
 
         # logging
         save_interval = 50 # check for potential saves every this many iterations
